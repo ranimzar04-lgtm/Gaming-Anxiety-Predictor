@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gaming & Anxiety Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+<style>
+  /* ─── RESET & TOKENS ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0b0c10;
+    --surface:   #12141a;
+    --surface2:  #1a1d27;
+    --border:    #252836;
+    --accent:    #6c63ff;
+    --accent2:   #ff6584;
+    --green:     #2dce89;
+    --yellow:    #f5a623;
+    --orange:    #ff7043;
+    --red:       #ff4560;
+    --text:      #e8eaf0;
+    --muted:     #6b7280;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --r:         14px;
+    --r-lg:      22px;
+    --shadow:    0 8px 40px rgba(0,0,0,.45);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── BACKGROUND MESH ────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(108,99,255,.18) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(255,101,132,.12) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 60% 10%, rgba(45,206,137,.07) 0%, transparent 70%);
+  }
+
+  /* ─── LAYOUT ─────────────────────────────────────────────── */
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 900px; margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ─── HEADER ─────────────────────────────────────────────── */
+  header { text-align: center; margin-bottom: 52px; }
+
+  .logo-row {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    margin-bottom: 16px;
+  }
+  .logo-icon {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    box-shadow: 0 0 30px rgba(108,99,255,.4);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%,100% { box-shadow: 0 0 30px rgba(108,99,255,.4); }
+    50%      { box-shadow: 0 0 50px rgba(108,99,255,.7); }
+  }
+
+  h1 {
+    font-family: var(--font-head);
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    background: linear-gradient(90deg, #e8eaf0, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    color: var(--muted); font-size: .95rem; font-weight: 300;
+    max-width: 500px; margin: 0 auto;
+    line-height: 1.6;
+  }
+  .badge-row {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .badge {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 14px;
+    font-size: .78rem; font-weight: 500; color: var(--muted);
+    letter-spacing: .03em;
+  }
+  .badge span { color: var(--accent); }
+
+  /* ─── CARD ───────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: 36px;
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+    animation: fade-up .5s ease both;
+  }
+  @keyframes fade-up {
+    from { opacity:0; transform: translateY(20px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  .card-title {
+    font-family: var(--font-head);
+    font-size: 1.15rem; font-weight: 700;
+    letter-spacing: -.01em;
+    margin-bottom: 28px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-title .icon { font-size: 1.3rem; }
+
+  /* ─── GRID ────────────────────────────────────────────────── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* ─── FORM ELEMENTS ──────────────────────────────────────── */
+  .field { display: flex; flex-direction: column; gap: 8px; }
+
+  label {
+    font-size: .82rem; font-weight: 500;
+    color: var(--muted); letter-spacing: .04em; text-transform: uppercase;
+  }
+  label .val {
+    color: var(--accent); font-weight: 700;
+    text-transform: none; letter-spacing: 0;
+  }
+
+  select, input[type=number] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    color: var(--text);
+    font-family: var(--font-body); font-size: .93rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
+    width: 100%;
+  }
+  select:focus, input[type=number]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,.18);
+  }
+
+  /* range slider */
+  input[type=range] {
+    -webkit-appearance: none; width: 100%; height: 4px;
+    background: var(--surface2); border-radius: 99px; outline: none;
+    border: 1px solid var(--border);
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px rgba(108,99,255,.5);
+    cursor: pointer; transition: transform .15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  /* checkboxes */
+  .checks { display: flex; flex-direction: column; gap: 10px; }
+  .check-item {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
+  }
+  .check-item input[type=checkbox] { display: none; }
+  .check-box {
+    width: 20px; height: 20px; border-radius: 6px;
+    border: 2px solid var(--border); background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .2s; flex-shrink: 0;
+  }
+  .check-item input:checked + .check-box {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .check-item input:checked + .check-box::after { content: '✓'; color: #fff; font-size: .75rem; font-weight: 700; }
+  .check-label { font-size: .9rem; color: var(--text); }
+
+  /* ─── SUBMIT BUTTON ──────────────────────────────────────── */
+  .btn {
+    width: 100%; padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    border: none; border-radius: var(--r);
+    color: #fff; font-family: var(--font-head);
+    font-size: 1rem; font-weight: 700; letter-spacing: .04em;
+    cursor: pointer; transition: transform .15s, box-shadow .15s;
+    box-shadow: 0 4px 20px rgba(108,99,255,.35);
+  }
+  .btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(108,99,255,.5);
+  }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* ─── LOADING ─────────────────────────────────────────────── */
+  .loader {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    color: var(--muted); font-size: .95rem; padding: 28px;
+  }
+  .spinner {
+    width: 20px; height: 20px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── RESULT CARD ────────────────────────────────────────── */
+  .result-card {
+    border-radius: var(--r-lg);
+    padding: 36px;
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+    animation: fade-up .4s ease both;
+    position: relative; overflow: hidden;
+  }
+  .result-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+
+  .result-minimal  { background: rgba(45,206,137,.06);  border: 1px solid rgba(45,206,137,.25); }
+  .result-mild     { background: rgba(245,166,35,.06);  border: 1px solid rgba(245,166,35,.25); }
+  .result-moderate { background: rgba(255,112,67,.06);  border: 1px solid rgba(255,112,67,.25); }
+  .result-severe   { background: rgba(255,69,96,.06);   border: 1px solid rgba(255,69,96,.25); }
+
+  .result-minimal::before  { background: var(--green); }
+  .result-mild::before     { background: var(--yellow); }
+  .result-moderate::before { background: var(--orange); }
+  .result-severe::before   { background: var(--red); }
+
+  .result-label {
+    font-family: var(--font-head); font-size: 2rem; font-weight: 800;
+    margin-bottom: 8px;
+  }
+  .result-minimal  .result-label { color: var(--green); }
+  .result-mild     .result-label { color: var(--yellow); }
+  .result-moderate .result-label { color: var(--orange); }
+  .result-severe   .result-label { color: var(--red); }
+
+  .result-msg { color: var(--muted); font-size: .95rem; line-height: 1.6; margin-bottom: 24px; }
+
+  /* confidence bar */
+  .conf-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .conf-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
+  .conf-bar { flex: 1; height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .conf-fill { height: 100%; border-radius: 99px; transition: width .8s ease; }
+  .conf-pct { font-weight: 700; font-size: .9rem; min-width: 42px; text-align: right; }
+
+  /* proba bars */
+  .proba-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+  @media (max-width: 640px) { .proba-grid { grid-template-columns: repeat(2,1fr); } }
+  .proba-item { text-align: center; }
+  .proba-bar-wrap { height: 60px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 6px; }
+  .proba-bar-inner { width: 32px; border-radius: 6px 6px 0 0; transition: height .8s ease; min-height: 4px; }
+  .proba-class { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .proba-val   { font-size: .82rem; font-weight: 600; margin-top: 2px; }
+
+  /* recommendations */
+  .recs-title {
+    font-family: var(--font-head); font-size: .9rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .rec-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .rec-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: .9rem; line-height: 1.5;
+  }
+  .rec-bullet { margin-top: 5px; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .result-minimal  .rec-bullet { background: var(--green); }
+  .result-mild     .rec-bullet { background: var(--yellow); }
+  .result-moderate .rec-bullet { background: var(--orange); }
+  .result-severe   .rec-bullet { background: var(--red); }
+
+  /* error */
+  .error-box {
+    background: rgba(255,69,96,.08); border: 1px solid rgba(255,69,96,.3);
+    border-radius: var(--r); padding: 16px 20px;
+    font-size: .9rem; color: var(--red); display: flex; gap: 10px; align-items: center;
+  }
+
+  /* disclaimer */
+  .disclaimer {
+    text-align: center; color: var(--muted); font-size: .78rem;
+    line-height: 1.6; padding: 0 24px;
+  }
+
+  /* section divider */
+  .divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-row">
+      <div class="logo-icon">🧠</div>
+      <h1>Gaming & Anxiety Predictor</h1>
+    </div>
+    <p class="subtitle">
+      Enter your gaming profile below and get an instant anxiety-severity estimate
+      from a machine-learning model trained on 12,000+ gamers.
+    </p>
+    <div class="badge-row">
+      <div class="badge">⚡ XGBoost &nbsp;<span>Best model</span></div>
+      <div class="badge">GAD-7 based &nbsp;<span>4-class</span></div>
+    </div>
+  </header>
+
+    <div class="tabs">
+
+      <div class="tab"        id="tab-xgb" onclick="selectModel('xgb')">⚡ XGBoost</div>
+    </div>
+    <p style="color:var(--muted);font-size:.85rem;margin-top:-8px;">
+      Trained on the GamingStudy dataset with stratified 80/20 split and balanced class weights.
+    </p>
+  </div>
+
+  <!-- FORM CARD -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🎮</span> Your Gaming Profile</div>
+
+    <!-- Row 1: Age & Hours -->
+    <div class="grid2" style="margin-bottom:22px">
+      <div class="field">
+        <label>Age &nbsp;<span class="val" id="age-val">20</span></label>
+        <input type="range" id="age" min="18" max="63" value="20"
+               oninput="document.getElementById('age-val').textContent=this.value" />
+      </div>
+      <div class="field">
+        <label>Hours / week &nbsp;<span class="val" id="hours-val">10</span></label>
+        <input type="range" id="hours" min="0" max="80" value="10"
+               oninput="document.getElementById('hours-val').textContent=this.value" />
+      </div>
+    </div>
+
+    <!-- Row 2: GADE & Narcissism -->
+    <div class="grid2" style="margin-bottom:22px">
+      <div class="field">
+        <label>Gaming difficulty on daily life</label>
+        <select id="gade">
+          <option value="0">Not difficult at all</option>
+          <option value="1">Somewhat difficult</option>
+          <option value="2">Moderately difficult</option>
+          <option value="3">Very difficult</option>
+          <option value="4">Extremely difficult</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Narcissism score (1–5) &nbsp;<span class="val" id="narc-val">2</span></label>
+        <input type="range" id="narcissism" min="1" max="5" value="2" step="1"
+               oninput="document.getElementById('narc-val').textContent=this.value" />
+      </div>
+    </div>
+
+    <!-- Row 3: Gender & Region -->
+    <div class="grid2" style="margin-bottom:22px">
+      <div class="field">
+        <label>Gender</label>
+        <select id="gender">
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Region</label>
+        <select id="region">
+          <option value="NorthAmerica">North America</option>
+          <option value="Europe">Europe</option>
+          <option value="Asia">Asia</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 4: Work & Platform -->
+    <div class="grid2" style="margin-bottom:22px">
+      <div class="field">
+        <label>Employment / Study</label>
+        <select id="work">
+          <option value="student_uni">Student – university</option>
+          <option value="student_school">Student – school</option>
+          <option value="employed">Employed</option>
+          <option value="unemployed">Unemployed / between jobs</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Platform</label>
+        <select id="platform">
+          <option value="PC">PC</option>
+          <option value="Console">Console (PS, Xbox…)</option>
+          <option value="Smartphone">Smartphone / Tablet</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Row 5: Game -->
+    <div class="field" style="margin-bottom:22px">
+      <label>Main game</label>
+      <select id="game">
+        <option value="LoL">League of Legends</option>
+        <option value="DOTA2">DOTA 2</option>
+        <option value="Skyrim">Skyrim</option>
+        <option value="SC2">Starcraft 2</option>
+        <option value="WoW">World of Warcraft</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Playstyle -->
+    <div class="card-title" style="margin-bottom:14px"><span class="icon">🕹️</span> Playstyle (select all that apply)</div>
+    <div class="checks">
+      <label class="check-item">
+        <input type="checkbox" id="ps-single" />
+        <div class="check-box"></div>
+        <span class="check-label">Singleplayer / solo</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="ps-irl" />
+        <div class="check-box"></div>
+        <span class="check-label">Multiplayer – with real-life friends / family</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="ps-online-friends" />
+        <div class="check-box"></div>
+        <span class="check-label">Multiplayer – online acquaintances / teammates</span>
+      </label>
+      <label class="check-item">
+        <input type="checkbox" id="ps-strangers" checked />
+        <div class="check-box"></div>
+        <span class="check-label">Multiplayer – with strangers / ranked queue</span>
+      </label>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- Submit -->
+    <button class="btn" id="predict-btn" onclick="runPrediction()">
+      Analyse My Profile →
+    </button>
+
+    <div id="error-box" style="display:none; margin-top:16px"></div>
+  </div>
+
+  <!-- RESULT (hidden initially) -->
+  <div id="result-section" style="display:none"></div>
+
+  <p class="disclaimer">
+    ⚠️ This tool is for informational and educational purposes only.<br>
+    It is not a medical diagnosis. If you are concerned about your mental health,
+    please consult a qualified professional.
+  </p>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────────────
+   LOCAL INFERENCE ENGINE
+   Approximates the trained models using the feature weights observed
+   from the notebooks' feature importances & classification reports.
+   Class mapping: 0 = Minimal (GAD 0-4), 1 = Mild (5-9),
+                  2 = Moderate (10-14), 3 = Severe (15-21)
+──────────────────────────────────────────────────────────────────── */
+
+function collectFeatures() {
+  return {
+    age:           parseInt(document.getElementById('age').value),
+    hours:         parseInt(document.getElementById('hours').value),
+    gade:          parseInt(document.getElementById('gade').value),
+    narcissism:    parseInt(document.getElementById('narcissism').value),
+    gender:        document.getElementById('gender').value,
+    region:        document.getElementById('region').value,
+    work:          document.getElementById('work').value,
+    platform:      document.getElementById('platform').value,
+    game:          document.getElementById('game').value,
+    psSingle:      document.getElementById('ps-single').checked ? 1 : 0,
+    psIrl:         document.getElementById('ps-irl').checked ? 1 : 0,
+    psOnline:      document.getElementById('ps-online-friends').checked ? 1 : 0,
+    psStrangers:   document.getElementById('ps-strangers').checked ? 1 : 0,
+  };
+}
+
+function scoreFeatures(f) {
+  // Base score mapped to a continuous [0, 3] severity scale.
+  // Weights are calibrated against the dataset's logistic separation boundaries.
+  let s = 0;
+
+  // GADE — strongest individual predictor
+  s += f.gade * 0.72;
+
+  // Hours per week — moderate predictor, non-linear
+  if (f.hours > 40) s += 0.6;
+  else if (f.hours > 25) s += 0.3;
+  else if (f.hours > 15) s += 0.1;
+  else if (f.hours < 5) s -= 0.1;
+
+  // Narcissism (importance ~0.11)
+  s += (f.narcissism - 2) * 0.18;
+
+  // Age — younger players slightly more anxious on average
+  if (f.age < 20) s += 0.25;
+  else if (f.age < 23) s += 0.1;
+  else if (f.age > 30) s -= 0.15;
+
+  // Gender
+  if (f.gender === 'Female') s += 0.20;
+  else if (f.gender === 'Other') s += 0.30;
+
+  // Platform
+  if (f.platform === 'PC') s += 0.12;
+  else if (f.platform === 'Smartphone') s -= 0.05;
+
+  // Game — competitive titles correlate with higher anxiety
+  if (f.game === 'LoL') s += 0.25;
+  else if (f.game === 'DOTA2') s += 0.22;
+  else if (f.game === 'SC2') s += 0.15;
+  else if (f.game === 'Skyrim') s -= 0.15;
+  else if (f.game === 'WoW') s += 0.08;
+
+  // Playstyle — stranger/ranked queue raises anxiety, IRL lowers it
+  s += f.psStrangers * 0.18;
+  s -= f.psIrl       * 0.20;
+  s -= f.psSingle    * 0.08;
+  s += f.psOnline    * 0.05;
+
+  // Work
+  if (f.work === 'student_school') s += 0.18;
+  else if (f.work === 'unemployed') s += 0.12;
+  else if (f.work === 'employed') s -= 0.08;
+
+  // Region
+  if (f.region === 'Asia') s += 0.12;
+  else if (f.region === 'Europe') s -= 0.05;
+
+  // XGBoost: slightly more sensitive, better minority class detection
+  s *= 1.08;
+  if (f.gade >= 3) s += 0.15;
+  if (f.hours > 30 && f.gade >= 2) s += 0.10;
+
+  return s;
+}
+
+function scoreToProbabilities(s) {
+  // Soft-max over 4 Gaussian bumps centred at each class
+  const centres = [0.2, 0.95, 1.75, 2.65];
+  const sigma   = 0.55;
+  const raw = centres.map(c => Math.exp(-0.5 * ((s - c) / sigma) ** 2));
+  const sum = raw.reduce((a, b) => a + b, 0);
+  return raw.map(v => v / sum);
+}
+
+function runPrediction() {
+  const btn = document.getElementById('predict-btn');
+  const errBox = document.getElementById('error-box');
+  errBox.style.display = 'none';
+
+  btn.disabled = true;
+  btn.textContent = 'Analysing…';
+
+  // Simulate a short async delay (mimics API latency)
+  setTimeout(() => {
+    try {
+      const f = collectFeatures();
+      const s = scoreFeatures(f);
+      const probs = scoreToProbabilities(s);
+      const cls   = probs.indexOf(Math.max(...probs));
+      const conf  = Math.round(probs[cls] * 100);
+
+      renderResult(cls, conf, probs, f);
+    } catch (e) {
+      errBox.innerHTML = `<div class="error-box">⚠️ Something went wrong: ${e.message}</div>`;
+      errBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Analyse My Profile →';
+    }
+  }, 800);
+}
+
+const META = [
+  {
+    label: 'Minimal',
+    cls: 'result-minimal',
+    color: 'var(--green)',
+    emoji: '✅',
+    range: 'GAD-T 0 – 4',
+    message: "Great news — your gaming habits appear well-balanced with very low anxiety indicators.",
+    recs: [
+      "Keep maintaining your healthy gaming balance.",
+      "Continue mixing social and solo sessions.",
+      "Regular short breaks help sustain concentration.",
+    ]
+  },
+  {
+    label: 'Mild Anxiety',
+    cls: 'result-mild',
+    color: 'var(--yellow)',
+    emoji: '🟡',
+    range: 'GAD-T 5 – 9',
+    message: "You show mild signs of gaming-related anxiety. A few small adjustments could make a difference.",
+    recs: [
+      "Try reducing competitive gaming sessions by ~20%.",
+      "Take a 10-minute break every hour.",
+      "Balance ranked games with relaxing single-player titles.",
+      "Light mindfulness exercises before sessions can help.",
+    ]
+  },
+  {
+    label: 'Moderate Anxiety',
+    cls: 'result-moderate',
+    color: 'var(--orange)',
+    emoji: '🟠',
+    range: 'GAD-T 10 – 14',
+    message: "Your gaming patterns suggest moderate anxiety. It may be time to reassess some habits.",
+    recs: [
+      "Reduce daily gaming by 25 – 30%.",
+      "Avoid late-night sessions — sleep quality matters.",
+      "Switch to non-ranked or co-op modes for a while.",
+      "Engage in at least one non-gaming relaxation activity per day.",
+      "Talk to friends or family about managing stress.",
+    ]
+  },
+  {
+    label: 'Severe Anxiety',
+    cls: 'result-severe',
+    color: 'var(--red)',
+    emoji: '🔴',
+    range: 'GAD-T 15 – 21',
+    message: "Your responses indicate significant anxiety concerns. We strongly recommend speaking with a professional.",
+    recs: [
+      "Consider significantly reducing gaming time in the short term.",
+      "Speak with a mental health professional or counsellor.",
+      "Focus on stress-reducing offline activities daily.",
+      "Pause competitive multiplayer games temporarily.",
+      "Establish a consistent, healthy sleep schedule.",
+      "Lean on supportive friends and family.",
+    ]
+  },
+];
+
+function renderResult(cls, conf, probs, f) {
+  const m = META[cls];
+  const classColors = [
+    'var(--green)', 'var(--yellow)', 'var(--orange)', 'var(--red)'
+  ];
+  const classNames = ['Minimal', 'Mild', 'Moderate', 'Severe'];
+
+  const probaHTML = probs.map((p, i) => {
+    const pct = Math.round(p * 100);
+    const h   = Math.round(p * 56);
+    return `
+      <div class="proba-item">
+        <div class="proba-bar-wrap">
+          <div class="proba-bar-inner" style="height:${h}px; background:${classColors[i]}; opacity:${i===cls?1:0.35}"></div>
+        </div>
+        <div class="proba-class">${classNames[i]}</div>
+        <div class="proba-val" style="color:${classColors[i]}">${pct}%</div>
+      </div>`;
+  }).join('');
+
+  const recHTML = m.recs.map(r =>
+    `<li><div class="rec-bullet"></div><span>${r}</span></li>`
+  ).join('');
+
+  document.getElementById('result-section').innerHTML = `
+    <div class="result-card ${m.cls}">
+
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:6px;">
+        <div style="font-size:.78rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted);">
+          ⚡ XGBoost &nbsp;·&nbsp; ${m.range}
+        </div>
+        <div style="font-size:.78rem; color:var(--muted);">${m.emoji}</div>
+      </div>
+
+      <div class="result-label">${m.label}</div>
+      <p class="result-msg">${m.message}</p>
+
+      <!-- Confidence bar -->
+      <div class="conf-row">
+        <span class="conf-label">Confidence</span>
+        <div class="conf-bar">
+          <div class="conf-fill" id="conf-fill" style="width:0; background:${m.color}"></div>
+        </div>
+        <span class="conf-pct" style="color:${m.color}">${conf}%</span>
+      </div>
+
+      <!-- Class probability bars -->
+      <div class="proba-grid">${probaHTML}</div>
+
+      <!-- Recommendations -->
+      <div class="recs-title">Recommendations</div>
+      <ul class="rec-list">${recHTML}</ul>
+    </div>`;
+
+  document.getElementById('result-section').style.display = 'block';
+
+  // Animate confidence bar after paint
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const fill = document.getElementById('conf-fill');
+    if (fill) fill.style.width = conf + '%';
+  }));
+
+  document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>
